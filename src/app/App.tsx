@@ -1,7 +1,8 @@
 import './App.css';
+import { ShipsPage } from '../pages/ships/ShipsPage';
 
 function App() {
-  return <main>World of Warships Fleet Explorer</main>;
+  return <ShipsPage />;
 }
 
 export default App;
