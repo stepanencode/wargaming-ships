@@ -1,7 +1,18 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+
+import { ShipFilters } from '../../features/ship-filters/ui/ShipFilters';
+import { filterShips } from '../../features/ship-filters/model/filterShips';
+import { getFilterOptions } from '../../features/ship-filters/model/getFilterOptions';
+import {
+  initialShipFilters,
+  type ShipFiltersState,
+} from '../../features/ship-filters/model/types';
 import { fetchFleetData } from '../../shared/api/fleet';
 
 export function ShipsPage() {
+  const [filters, setFilters] = useState<ShipFiltersState>(initialShipFilters);
+
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ['fleet'],
     queryFn: ({ signal }) => fetchFleetData(signal),
@@ -26,27 +37,44 @@ export function ShipsPage() {
     );
   }
 
+  const filterOptions = getFilterOptions(data);
+  const filteredShips = filterShips(data.ships, filters);
+
   return (
     <main>
       <h1>World of Warships Fleet Explorer</h1>
 
-      <p>Ships: {data.ships.length}</p>
-      <p>Nations: {Object.keys(data.nationsByCode).length}</p>
-      <p>Ship types: {Object.keys(data.typesByKey).length}</p>
+      <ShipFilters
+        filters={filters}
+        options={filterOptions}
+        onChange={setFilters}
+        onReset={() => setFilters(initialShipFilters)}
+      />
 
-      <ul>
-        {data.ships.slice(0, 10).map((ship) => (
-          <li key={ship.id}>
-            {ship.displayName}
-            {' — '}
-            Tier {ship.tier ?? 'Unknown'}
-            {' — '}
-            {ship.nationCode ?? 'Unknown nation'}
-            {' — '}
-            {ship.typeKey ?? 'Unknown type'}
-          </li>
-        ))}
-      </ul>
+      <p role="status">
+        {filteredShips.length} {filteredShips.length === 1 ? 'ship' : 'ships'}{' '}
+        found
+      </p>
+
+      {filteredShips.length === 0 ? (
+        <div>
+          <p>No ships match your filters.</p>
+        </div>
+      ) : (
+        <ul>
+          {filteredShips.map((ship) => (
+            <li key={ship.id}>
+              {ship.displayName}
+              {' — '}
+              Tier {ship.tier ?? 'Unknown'}
+              {' — '}
+              {ship.nationCode ?? 'Unknown nation'}
+              {' — '}
+              {ship.typeKey ?? 'Unknown type'}
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
