@@ -8,7 +8,6 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "worker:types": "wrangler types --config worker/wrangler.jsonc worker/worker-configuration.d.ts",
     "worker:check": "tsc -p worker",
     "worker:deploy": "wrangler deploy --config worker/wrangler.jsonc"
   },
@@ -17,6 +16,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261011.1",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",

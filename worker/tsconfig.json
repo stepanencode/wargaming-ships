@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2024",
     "lib": ["es2024"],
-    "types": [],
+    "types": ["@cloudflare/workers-types"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -18,5 +18,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "worker-configuration.d.ts"]
+  "include": ["src"]
 }

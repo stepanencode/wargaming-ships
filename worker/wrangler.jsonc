@@ -5,6 +5,9 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": false,
   "routes": [{ "pattern": "wargaming-ships.oksanastepanenko.com", "custom_domain": true }],
-  "vars": { "BUCKET_URL": "https://storage.googleapis.com/wargaming-ships" },
+  "vars": {
+    "BUCKET_URL": "https://storage.googleapis.com/wargaming-ships",
+    "API_ORIGIN": "https://vortex.worldofwarships.eu"
+  },
   "observability": { "enabled": true }
 }
