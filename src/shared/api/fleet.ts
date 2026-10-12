@@ -7,14 +7,18 @@ import {
 } from './worldOfWarships.api';
 
 export async function fetchFleetData(signal?: AbortSignal) {
-  const rawVehicles = await fetchVehicles(signal);
+  const vehiclesPromise = fetchVehicles(signal);
+
+  const supportingPromise = Promise.allSettled([
+    fetchNations(signal),
+    fetchVehicleTypes(signal),
+    fetchMediaPath(signal),
+  ]);
+
+  const rawVehicles = await vehiclesPromise;
 
   const [nationsResult, vehicleTypesResult, mediaPathResult] =
-    await Promise.allSettled([
-      fetchNations(signal),
-      fetchVehicleTypes(signal),
-      fetchMediaPath(signal),
-    ]);
+    await supportingPromise;
 
   const rawNations =
     nationsResult.status === 'fulfilled' ? nationsResult.value : [];

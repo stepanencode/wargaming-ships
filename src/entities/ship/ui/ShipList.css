@@ -1,0 +1,19 @@
+.ship-list-viewport {
+  height: 70vh;
+  min-height: 320px;
+  overflow: auto;
+}
+
+.ship-list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ship-list-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}

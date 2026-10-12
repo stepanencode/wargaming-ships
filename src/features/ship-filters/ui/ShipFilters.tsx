@@ -38,6 +38,8 @@ export function ShipFilters({
       <label>
         Nation
         <select
+          id="ship-nation"
+          name="ship-nation"
           value={filters.nation ?? ''}
           onChange={(event) =>
             onChange({
@@ -59,6 +61,8 @@ export function ShipFilters({
       <label>
         Ship type
         <select
+          id="ship-type"
+          name="ship-type"
           value={filters.type ?? ''}
           onChange={(event) => {
             const type =
@@ -85,6 +89,8 @@ export function ShipFilters({
       <label>
         Tier
         <select
+          id="ship-tier"
+          name="ship-tier"
           value={filters.tier ?? ''}
           onChange={(event) =>
             onChange({

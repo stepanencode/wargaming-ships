@@ -8,6 +8,8 @@ export function SearchInput({ value, onChange }: SearchInputProps) {
     <label>
       Search ships
       <input
+        id="ship-search"
+        name="ship-search"
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}

@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ShipFilters } from '../../features/ship-filters/ui/ShipFilters';
 import { filterShips } from '../../features/ship-filters/model/filterShips';
-import { getFilterOptions } from '../../features/ship-filters/model/getFilterOptions';
+import {
+  getFilterOptions,
+  type ShipFilterOptions,
+} from '../../features/ship-filters/model/getFilterOptions';
+
 import {
   initialShipFilters,
   type ShipFiltersState,
 } from '../../features/ship-filters/model/types';
 import { fetchFleetData } from '../../shared/api/fleet';
+import { ShipList } from '../../entities/ship/ui/ShipList';
+
+const EMPTY_FILTER_OPTIONS: ShipFilterOptions = {
+  nations: [],
+  types: [],
+  tiers: [],
+};
 
 export function ShipsPage() {
   const [filters, setFilters] = useState<ShipFiltersState>(initialShipFilters);
@@ -17,6 +28,16 @@ export function ShipsPage() {
     queryKey: ['fleet'],
     queryFn: ({ signal }) => fetchFleetData(signal),
   });
+
+  const filterOptions = useMemo(
+    () => (data ? getFilterOptions(data) : EMPTY_FILTER_OPTIONS),
+    [data],
+  );
+
+  const filteredShips = useMemo(
+    () => (data ? filterShips(data.ships, filters) : []),
+    [data, filters],
+  );
 
   if (isPending) {
     return <div>Loading fleet...</div>;
@@ -36,9 +57,6 @@ export function ShipsPage() {
       </div>
     );
   }
-
-  const filterOptions = getFilterOptions(data);
-  const filteredShips = filterShips(data.ships, filters);
 
   return (
     <main>
@@ -61,19 +79,7 @@ export function ShipsPage() {
           <p>No ships match your filters.</p>
         </div>
       ) : (
-        <ul>
-          {filteredShips.map((ship) => (
-            <li key={ship.id}>
-              {ship.displayName}
-              {' — '}
-              Tier {ship.tier ?? 'Unknown'}
-              {' — '}
-              {ship.nationCode ?? 'Unknown nation'}
-              {' — '}
-              {ship.typeKey ?? 'Unknown type'}
-            </li>
-          ))}
-        </ul>
+        <ShipList ships={filteredShips} />
       )}
     </main>
   );
