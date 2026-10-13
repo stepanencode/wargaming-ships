@@ -1,6 +1,7 @@
 import type { ShipFiltersState } from '../model/types';
 import type { ShipFilterOptions } from '../model/getFilterOptions';
 import { SearchInput } from './SearchInput';
+import './ShipFilters.css';
 
 type ShipFiltersProps = {
   filters: ShipFiltersState;
@@ -22,7 +23,7 @@ export function ShipFilters({
     filters.tier !== null;
 
   return (
-    <fieldset>
+    <fieldset className="ship-filters">
       <legend>Filter ships</legend>
 
       <SearchInput
@@ -35,7 +36,7 @@ export function ShipFilters({
         }
       />
 
-      <label>
+      <label className="ship-filter-control">
         Nation
         <select
           id="ship-nation"
@@ -58,7 +59,7 @@ export function ShipFilters({
         </select>
       </label>
 
-      <label>
+      <label className="ship-filter-control">
         Ship type
         <select
           id="ship-type"
@@ -86,7 +87,7 @@ export function ShipFilters({
         </select>
       </label>
 
-      <label>
+      <label className="ship-filter-control">
         Tier
         <select
           id="ship-tier"
@@ -110,7 +111,12 @@ export function ShipFilters({
         </select>
       </label>
 
-      <button type="button" onClick={onReset} disabled={!hasActiveFilters}>
+      <button
+        className="ship-filters-reset"
+        type="button"
+        onClick={onReset}
+        disabled={!hasActiveFilters}
+      >
         Reset filters
       </button>
     </fieldset>

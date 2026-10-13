@@ -49,12 +49,13 @@ function getVehicleType(tags: unknown): ShipTypeKey | null {
 function getImageUrl(
   icons: unknown,
   mediaBaseUrl: string | null,
+  size: 'medium' | 'large',
 ): string | null {
   if (!mediaBaseUrl || !isRecord(icons)) {
     return null;
   }
 
-  const relativePath = icons.medium;
+  const relativePath = icons[size];
 
   if (!isString(relativePath)) {
     return null;
@@ -86,7 +87,10 @@ export function mapVehicleToShip(
     tier: isNumber(rawVehicle.level) ? rawVehicle.level : null,
     nationCode: isString(rawVehicle.nation) ? rawVehicle.nation : null,
     typeKey: getVehicleType(rawVehicle.tags),
-    imageUrl: getImageUrl(rawVehicle.icons, mediaBaseUrl),
+    imageUrls: {
+      medium: getImageUrl(rawVehicle.icons, mediaBaseUrl, 'medium'),
+      large: getImageUrl(rawVehicle.icons, mediaBaseUrl, 'large'),
+    },
   };
 }
 

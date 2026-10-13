@@ -1,7 +1,19 @@
 .ship-list-viewport {
-  height: 70vh;
-  min-height: 320px;
-  overflow: auto;
+  height: clamp(420px, 68dvh, 760px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .ship-list-viewport {
+    height: clamp(360px, 62dvh, 640px);
+  }
+}
+
+@media (max-width: 640px) {
+  .ship-list-viewport {
+    height: clamp(320px, 60dvh, 520px);
+  }
 }
 
 .ship-list {

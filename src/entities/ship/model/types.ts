@@ -12,7 +12,10 @@ export type Ship = {
   tier: number | null;
   nationCode: string | null;
   typeKey: ShipTypeKey | null;
-  imageUrl: string | null;
+  imageUrls: {
+    medium: string | null;
+    large: string | null;
+  };
 };
 
 export type Nation = {

@@ -7,11 +7,24 @@ type ShipCardProps = {
 };
 
 export const ShipCard = memo(function ShipCard({ ship }: ShipCardProps) {
+  const imageSrc = ship.imageUrls.medium ?? ship.imageUrls.large;
+
+  const imageSrcSet =
+    ship.imageUrls.medium && ship.imageUrls.large
+      ? `${ship.imageUrls.medium} 1x, ${ship.imageUrls.large} 2x`
+      : undefined;
+
   return (
     <article className="ship-card">
       <div className="ship-card-image">
-        {ship.imageUrl ? (
-          <img src={ship.imageUrl} alt="" loading="lazy" decoding="async" />
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            srcSet={imageSrcSet}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <div className="ship-card-image-placeholder">No image</div>
         )}

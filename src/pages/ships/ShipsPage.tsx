@@ -21,12 +21,20 @@ const EMPTY_FILTER_OPTIONS: ShipFilterOptions = {
   tiers: [],
 };
 
+const FIVE_MINUTES = 5 * 60 * 1000;
+const THIRTY_MINUTES = 30 * 60 * 1000;
+
 export function ShipsPage() {
   const [filters, setFilters] = useState<ShipFiltersState>(initialShipFilters);
 
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ['fleet'],
     queryFn: ({ signal }) => fetchFleetData(signal),
+
+    staleTime: FIVE_MINUTES,
+    gcTime: THIRTY_MINUTES,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const filterOptions = useMemo(
@@ -40,13 +48,13 @@ export function ShipsPage() {
   );
 
   if (isPending) {
-    return <div>Loading fleet...</div>;
+    return <div role="status">Loading fleet...</div>;
   }
 
   if (isError) {
     return (
       <div>
-        <p>
+        <p role="alert">
           Failed to load fleet:{' '}
           {error instanceof Error ? error.message : 'Unknown error'}
         </p>

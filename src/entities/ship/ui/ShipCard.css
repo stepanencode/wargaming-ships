@@ -6,9 +6,10 @@
 }
 
 .ship-card-image {
-  flex: 0 0 240px;
-  width: 240px;
-  height: 135px;
+  flex: 0 0 clamp(280px, 32vw, 420px);
+  width: clamp(280px, 32vw, 420px);
+  aspect-ratio: 435 / 256;
+  height: auto;
   overflow: hidden;
 }
 
@@ -27,7 +28,27 @@
 }
 
 .ship-card-content {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.ship-card-content strong,
+.ship-card-content span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .ship-card {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ship-card-image {
+    flex: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 435 / 256;
+  }
 }

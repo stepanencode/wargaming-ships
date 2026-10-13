@@ -5,9 +5,10 @@ type SearchInputProps = {
 
 export function SearchInput({ value, onChange }: SearchInputProps) {
   return (
-    <label>
+    <label className="ship-filter-control ship-search-control">
       Search ships
       <input
+        className="ship-search-input"
         id="ship-search"
         name="ship-search"
         type="search"

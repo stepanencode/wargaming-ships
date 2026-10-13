@@ -19,13 +19,19 @@ export function ShipList({ ships }: ShipListProps) {
   const virtualizer = useVirtualizer({
     count: ships.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => 184,
+    estimateSize: () => 260,
     overscan: 10,
     getItemKey: (index) => ships[index].id,
   });
 
   return (
-    <div ref={scrollContainerRef} className="ship-list-viewport">
+    <div
+      ref={scrollContainerRef}
+      className="ship-list-viewport"
+      role="region"
+      aria-label="Ships"
+      tabIndex={0}
+    >
       <ul
         className="ship-list"
         style={{
@@ -37,9 +43,11 @@ export function ShipList({ ships }: ShipListProps) {
 
           return (
             <li
-              key={ship.id}
+              key={virtualRow.key}
               data-index={virtualRow.index}
               data-ship-row
+              aria-posinset={virtualRow.index + 1}
+              aria-setsize={ships.length}
               ref={virtualizer.measureElement}
               className="ship-list-row"
               style={{
