@@ -8,7 +8,7 @@
   "vars": {
     "BUCKET_URL": "https://storage.googleapis.com/wargaming-ships",
     "API_ORIGIN": "https://vortex.worldofwarships.eu",
-    "MEDIA_ORIGIN": "https://wows-gloss-icons.wgcdn.co/icons"
+    "MEDIA_URL": "https://wows-gloss-icons.wgcdn.co/icons"
   },
   "observability": { "enabled": true }
 }

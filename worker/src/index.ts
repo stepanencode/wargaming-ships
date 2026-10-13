@@ -2,20 +2,22 @@
 interface Env {
   BUCKET_URL: string;
   API_ORIGIN: string;
-  MEDIA_ORIGIN: string;
+  MEDIA_URL: string;
 }
 
 // Conditional and range headers let the bucket answer 304/206.
 const FORWARDED_HEADERS = ['if-none-match', 'if-modified-since', 'range'];
 const HAS_EXTENSION = /\.[^/]+$/;
-// Only the public encyclopedia is proxied, so the worker is not an open proxy to the whole API host.
-const API_PREFIX = '/api/encyclopedia/';
+// Only the encyclopedia endpoints the app uses are proxied (any language), so the worker is not
+// an open proxy to the whole API host.
+const API_PATH = /^\/api\/encyclopedia\/[a-z_-]+\/(vehicles|nations|vehicle_types_common|media_path)\/$/i;
 // Minimal cache for anything whose freshness we cannot prove (the API, unverified images):
 // keeps data near-fresh while shielding the origins, and any bad copy expires within minutes.
 const SHORT_CACHE_CONTROL = 'public, max-age=300';
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const NO_STORE = 'no-store';
-// /vehicles/ is ~20 MB, mostly 19 translations; by default only what the app reads is kept.
+// /vehicles/ is ~20 MB, mostly 19 translations; by default only what the app reads is kept
+// (medium and large icons for the 1x/2x srcSet).
 const VEHICLES_PATH = /^\/api\/encyclopedia\/([a-z_-]+)\/vehicles\/$/i;
 // Fixed list of query options; anything else is rejected so random params cannot bust the cache.
 // `include` adds fields to the slim payload; `raw` returns the upstream body untouched, without parsing.
@@ -80,7 +82,7 @@ async function fetchFromMedia(url: URL, env: Env, ctx: ExecutionContext) {
   let upstream: Response;
   let body: ArrayBuffer;
   try {
-    upstream = await fetch(env.MEDIA_ORIGIN + url.pathname.slice(MEDIA_PREFIX.length - 1));
+    upstream = await fetch(env.MEDIA_URL + url.pathname.slice(MEDIA_PREFIX.length - 1));
     if (!upstream.ok) {
       return new Response(upstream.body, {
         status: upstream.status,
@@ -149,7 +151,7 @@ function slimVehicle(vehicle: unknown, include: Set<Include>, language: string) 
 
   const slim: Record<string, unknown> = pick(vehicle, ['level', 'name', 'nation', 'tags']) as Record<string, unknown>;
   if ('icons' in vehicle) {
-    slim.icons = include.has('icons') ? vehicle.icons : pick(vehicle.icons, ['medium']);
+    slim.icons = include.has('icons') ? vehicle.icons : pick(vehicle.icons, ['medium', 'large']);
   }
   if ('localization' in vehicle) {
     const groups = include.has('description') ? ['mark', 'shortmark', 'description'] : ['mark', 'shortmark'];
@@ -183,7 +185,7 @@ async function rewriteMediaPath(upstream: Response, env: Env) {
   const text = await upstream.text();
   try {
     const payload: unknown = JSON.parse(text);
-    if (!isRecord(payload) || payload.data !== `${env.MEDIA_ORIGIN}/`) return text;
+    if (!isRecord(payload) || payload.data !== `${env.MEDIA_URL}/`) return text;
     return JSON.stringify({ ...payload, data: MEDIA_PREFIX });
   } catch {
     return text;
@@ -254,7 +256,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext) 
   const { pathname } = url;
 
   if (pathname.startsWith('/api/')) {
-    if (!pathname.startsWith(API_PREFIX)) {
+    if (!API_PATH.test(pathname)) {
       return new Response('Not Found', { status: 404 });
     }
     return withCleanHeaders(await fetchFromApi(url, env, ctx));
