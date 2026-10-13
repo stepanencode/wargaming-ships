@@ -156,39 +156,50 @@ function slimVehicle(vehicle: unknown, include: Set<Include>, language: string) 
   if ('localization' in vehicle) {
     const groups = include.has('description') ? ['mark', 'shortmark', 'description'] : ['mark', 'shortmark'];
     const localization = pick(vehicle.localization, groups);
+    // A group is narrowed only when it has the requested language; otherwise it is kept whole
+    // rather than emptied, so a missing translation never loses text.
     slim.localization =
       include.has('translations') || !isRecord(localization)
         ? localization
-        : Object.fromEntries(Object.entries(localization).map(([group, texts]) => [group, pick(texts, [language])]));
+        : Object.fromEntries(
+            Object.entries(localization).map(([group, texts]) => [
+              group,
+              isRecord(texts) && Object.hasOwn(texts, language) ? { [language]: texts[language] } : texts,
+            ]),
+          );
   }
   return slim;
 }
 
+// `json: false` means the body is not valid JSON (e.g. an HTML error page sent with 200); it is
+// passed through unchanged but must not be cached.
+type ApiBody = { body: string; json: boolean };
+
 // Parsing ~20 MB of JSON costs ~60–80 ms of CPU; it runs only on a cache miss.
-async function slimVehicles(upstream: Response, include: Set<Include>, language: string) {
+async function slimVehicles(upstream: Response, include: Set<Include>, language: string): Promise<ApiBody> {
   const text = await upstream.text();
   try {
     const payload: unknown = JSON.parse(text);
-    if (!isRecord(payload) || !isRecord(payload.data)) return text;
+    if (!isRecord(payload) || !isRecord(payload.data)) return { body: text, json: true };
     const data = Object.fromEntries(
       Object.entries(payload.data).map(([id, vehicle]) => [id, slimVehicle(vehicle, include, language)]),
     );
-    return JSON.stringify({ ...payload, data });
+    return { body: JSON.stringify({ ...payload, data }), json: true };
   } catch {
-    return text;
+    return { body: text, json: false };
   }
 }
 
 // Points the app's image base URL at /media/ on this host. Only the known CDN value is replaced,
 // so if the API ever moves images elsewhere they keep loading from the new host directly.
-async function rewriteMediaPath(upstream: Response, env: Env) {
+async function rewriteMediaPath(upstream: Response, env: Env): Promise<ApiBody> {
   const text = await upstream.text();
   try {
     const payload: unknown = JSON.parse(text);
-    if (!isRecord(payload) || payload.data !== `${env.MEDIA_URL}/`) return text;
-    return JSON.stringify({ ...payload, data: MEDIA_PREFIX });
+    if (!isRecord(payload) || payload.data !== `${env.MEDIA_URL}/`) return { body: text, json: true };
+    return { body: JSON.stringify({ ...payload, data: MEDIA_PREFIX }), json: true };
   } catch {
-    return text;
+    return { body: text, json: false };
   }
 }
 
@@ -210,16 +221,23 @@ async function fetchFromApi(url: URL, env: Env, ctx: ExecutionContext) {
 
   let upstream: Response;
   let body: BodyInit | null;
+  let cacheable: boolean;
   try {
     // No client headers or query are forwarded, and only safe headers are passed back (Set-Cookie would block caching).
     upstream = await fetch(env.API_ORIGIN + url.pathname);
-    const transform = upstream.ok && !raw;
-    body =
-      transform && vehiclesMatch
-        ? await slimVehicles(upstream, include, vehiclesMatch[1])
-        : transform && MEDIA_PATH.test(url.pathname)
+    // Only successful JSON is cached, so a one-off error page from the API is not served to everyone for 5 minutes.
+    cacheable = upstream.ok && (upstream.headers.get('content-type') ?? '').includes('json');
+    const transformed =
+      cacheable && !raw && vehiclesMatch
+        ? await slimVehicles(upstream, include, vehiclesMatch[1].toLowerCase())
+        : cacheable && !raw && MEDIA_PATH.test(url.pathname)
           ? await rewriteMediaPath(upstream, env)
-          : upstream.body;
+          : null;
+    if (transformed && !transformed.json) {
+      console.warn(`API returned invalid JSON, not caching: ${url.pathname}`);
+      cacheable = false;
+    }
+    body = transformed ? transformed.body : upstream.body;
   } catch (error) {
     console.warn(`API fetch failed: ${url.pathname}`, error);
     return new Response('Bad Gateway', { status: 502, headers: { 'Cache-Control': NO_STORE } });
@@ -227,10 +245,10 @@ async function fetchFromApi(url: URL, env: Env, ctx: ExecutionContext) {
 
   const headers = new Headers({
     'Content-Type': upstream.headers.get('content-type') ?? 'application/json',
-    'Cache-Control': upstream.ok ? (upstream.headers.get('cache-control') ?? SHORT_CACHE_CONTROL) : NO_STORE,
+    'Cache-Control': cacheable ? (upstream.headers.get('cache-control') ?? SHORT_CACHE_CONTROL) : NO_STORE,
   });
   const response = new Response(body, { status: upstream.status, headers });
-  if (upstream.ok) cachePut(ctx, cacheKey, response);
+  if (cacheable) cachePut(ctx, cacheKey, response);
   return response;
 }
 
