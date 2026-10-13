@@ -1,0 +1,122 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA, branch or tag to deploy (defaults to the selected branch)
+        required: false
+      deploy:
+        description: Deploy after a successful build (uncheck to run CI only)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Pushes to a branch run in order, so an older commit never deploys over a newer one.
+# Superseded CI runs on feature branches are cancelled; deploys are never interrupted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+
+env:
+  BUCKET: gs://wargaming-ships
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run worker:check
+      - run: npm run build
+        env:
+          VITE_SENTRY_RELEASE: ${{ steps.commit.outputs.sha }}
+          VITE_SENTRY_BRANCH: ${{ inputs.ref || github.ref_name }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          include-hidden-files: true
+          retention-days: 7
+
+  # Executes no code from the commit: dependencies are installed without scripts,
+  # the worker is only bundled, and the site comes prebuilt from the build job.
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy || github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      # Before GCP auth, so wrangler never has access to GCP credentials.
+      - name: Deploy worker
+        run: npx wrangler deploy --config worker/wrangler.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: inspired-studio-447411-b3
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      # Hashed assets first, so the new index.html never points at missing files.
+      # Old assets are kept for tabs still running the previous build.
+      - name: Upload hashed assets
+        run: >
+          gcloud storage rsync dist/assets "$BUCKET/assets" --recursive
+          --cache-control="public, max-age=31536000, immutable"
+
+      - name: Upload index.html and public files
+        run: >
+          gcloud storage rsync dist "$BUCKET" --recursive
+          --exclude="^assets/" --cache-control="no-cache"
+          --delete-unmatched-destination-objects
+
+      - name: Summary
+        run: echo "Deployed \`$SHA\` to https://wargaming-ships.oksanastepanenko.com" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          SHA: ${{ needs.build.outputs.sha }}

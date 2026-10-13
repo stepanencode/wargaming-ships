@@ -1,4 +1,5 @@
 import { mapFleetData } from '../../entities/ship/model/mapper';
+import { measure } from '../monitoring/sentry';
 import {
   fetchMediaPath,
   fetchNations,
@@ -6,7 +7,11 @@ import {
   fetchVehicles,
 } from './worldOfWarships.api';
 
-export async function fetchFleetData(signal?: AbortSignal) {
+export function fetchFleetData(signal?: AbortSignal) {
+  return measure('fleet.load', 'fleet', () => loadFleetData(signal));
+}
+
+async function loadFleetData(signal?: AbortSignal) {
   const vehiclesPromise = fetchVehicles(signal);
 
   const supportingPromise = Promise.allSettled([
@@ -29,5 +34,7 @@ export async function fetchFleetData(signal?: AbortSignal) {
   const mediaBaseUrl =
     mediaPathResult.status === 'fulfilled' ? mediaPathResult.value : null;
 
-  return mapFleetData(rawVehicles, rawNations, rawVehicleTypes, mediaBaseUrl);
+  return measure('fleet.map', 'fleet', () =>
+    mapFleetData(rawVehicles, rawNations, rawVehicleTypes, mediaBaseUrl),
+  );
 }
