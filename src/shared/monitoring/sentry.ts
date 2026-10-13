@@ -11,8 +11,9 @@ if (dsn) {
     tracesSampleRate: 1.0,
   });
 
+  // SDK 11 streams spans with attributes; scope tags are not applied to them.
   const branch = import.meta.env.VITE_SENTRY_BRANCH;
-  if (branch) Sentry.setTag('branch', branch);
+  if (branch) Sentry.setAttribute('branch', branch);
 }
 
 export function measure<T>(name: string, op: string, callback: () => T): T {
@@ -25,5 +26,6 @@ let shipsRenderedMarked = false;
 export function markShipsRendered() {
   if (shipsRenderedMarked) return;
   shipsRenderedMarked = true;
-  Sentry.setMeasurement('ships_rendered', performance.now(), 'millisecond');
+  const activeSpan = Sentry.getActiveSpan();
+  if (activeSpan) Sentry.getRootSpan(activeSpan).setAttribute('ships_rendered', performance.now());
 }
