@@ -1,18 +1,30 @@
 .ship-list-viewport {
-  height: clamp(420px, 68dvh, 760px);
+  height: 68dvh;
+  min-height: 420px;
+
   overflow-y: auto;
   overflow-x: hidden;
+
+  outline: none;
+}
+
+.ship-list-viewport:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--color-focus),
+    0 0 0 4px rgba(114, 212, 223, 0.14);
 }
 
 @media (max-width: 1024px) {
   .ship-list-viewport {
-    height: clamp(360px, 62dvh, 640px);
+    height: 62dvh;
+    min-height: 360px;
   }
 }
 
 @media (max-width: 640px) {
   .ship-list-viewport {
-    height: clamp(320px, 60dvh, 520px);
+    height: 60dvh;
+    min-height: 320px;
   }
 }
 
@@ -27,5 +39,7 @@
   position: absolute;
   top: 0;
   left: 0;
+
   width: 100%;
+  padding-bottom: 12px;
 }
