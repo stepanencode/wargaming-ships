@@ -1,3 +1,5 @@
+import { measure } from '../monitoring/sentry';
+
 export async function getJson(
   url: string,
   signal?: AbortSignal,
@@ -9,7 +11,8 @@ export async function getJson(
   }
 
   try {
-    return await response.json();
+    // The automatic fetch span ends at response headers; this covers body download and JSON parsing.
+    return await measure(`GET ${url} body`, 'http.body', () => response.json());
   } catch {
     throw new Error('Response contains invalid JSON');
   }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ShipFilters } from '../../features/ship-filters/ui/ShipFilters';
@@ -14,6 +14,7 @@ import {
 } from '../../features/ship-filters/model/types';
 import { fetchFleetData } from '../../shared/api/fleet';
 import { ShipList } from '../../entities/ship/ui/ShipList';
+import { markShipsRendered } from '../../shared/monitoring/sentry';
 
 const EMPTY_FILTER_OPTIONS: ShipFilterOptions = {
   nations: [],
@@ -38,6 +39,10 @@ export function ShipsPage() {
     () => (data ? filterShips(data.ships, filters) : []),
     [data, filters],
   );
+
+  useEffect(() => {
+    if (data) markShipsRendered();
+  }, [data]);
 
   if (isPending) {
     return <div>Loading fleet...</div>;
