@@ -1,0 +1,33 @@
+.ship-card {
+  display: flex;
+  gap: 16px;
+  min-height: 160px;
+  padding: 12px 0;
+}
+
+.ship-card-image {
+  flex: 0 0 240px;
+  width: 240px;
+  height: 135px;
+  overflow: hidden;
+}
+
+.ship-card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ship-card-image-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+
+.ship-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
