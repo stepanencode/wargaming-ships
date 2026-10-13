@@ -7,7 +7,8 @@
   "routes": [{ "pattern": "wargaming-ships.oksanastepanenko.com", "custom_domain": true }],
   "vars": {
     "BUCKET_URL": "https://storage.googleapis.com/wargaming-ships",
-    "API_ORIGIN": "https://vortex.worldofwarships.eu"
+    "API_ORIGIN": "https://vortex.worldofwarships.eu",
+    "MEDIA_ORIGIN": "https://wows-gloss-icons.wgcdn.co/icons"
   },
   "observability": { "enabled": true }
 }
