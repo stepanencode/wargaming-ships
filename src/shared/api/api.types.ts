@@ -5,10 +5,12 @@ export type RawLocalizedText = {
 export type RawLocalization = {
   mark?: RawLocalizedText;
   shortmark?: RawLocalizedText;
+  description?: RawLocalizedText;
 };
 
 export type RawIcons = {
   medium?: unknown;
+  large?: unknown;
   default?: unknown;
 };
 

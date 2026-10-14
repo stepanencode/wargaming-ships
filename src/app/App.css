@@ -70,6 +70,106 @@ main {
   border-bottom: 1px solid rgba(41, 72, 92, 0.55);
 }
 
+.ships-controls {
+  display: flex;
+  flex-direction: column;
+}
+
+.ships-filters-panel {
+  order: 1;
+}
+
+.ships-results-summary {
+  order: 2;
+}
+
+.ships-mobile-filters-toggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .ships-results-summary {
+    order: 1;
+
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+  }
+
+  .ships-filters-panel {
+    display: none;
+    order: 2;
+
+    margin-bottom: 12px;
+  }
+
+  .ships-filters-panel.is-open {
+    display: block;
+  }
+
+  .ships-mobile-filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    min-height: 36px;
+    padding: 0 12px;
+
+    color: var(--color-text);
+
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+
+    background: var(--color-surface-strong);
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  .ships-mobile-filters-toggle:hover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+  }
+
+  .ships-mobile-filters-toggle:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .ships-mobile-filters-count {
+    display: grid;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+
+    place-items: center;
+
+    color: var(--color-bg);
+
+    border-radius: 999px;
+
+    background: var(--color-accent);
+
+    font-size: 0.7rem;
+    line-height: 1;
+  }
+
+  .ships-mobile-filters-chevron {
+    transition: transform 140ms ease;
+  }
+
+  .ships-mobile-filters-chevron.is-open {
+    transform: rotate(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ships-mobile-filters-chevron {
+    transition: none;
+  }
+}
+
 .ships-results-count {
   margin: 0;
 
@@ -135,8 +235,8 @@ main {
 
 @media (max-width: 640px) {
   .fleet-loading-list {
-    height: 60dvh;
-    min-height: 320px;
+    height: 72dvh;
+    min-height: 420px;
   }
 }
 
@@ -306,7 +406,8 @@ main {
   }
 }
 .fleet-empty {
-  max-width: 720px;
+  width: 100%;
+  max-width: none;
   padding: 28px 24px;
 
   border: 1px solid var(--color-border);

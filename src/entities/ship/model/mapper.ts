@@ -23,7 +23,7 @@ const SHIP_TYPE_KEYS: ShipTypeKey[] = [
 
 function getEnglishText(
   localization: unknown,
-  key: 'mark' | 'shortmark',
+  key: 'mark' | 'shortmark' | 'description',
 ): string | null {
   if (!isRecord(localization)) {
     return null;
@@ -80,13 +80,26 @@ export function mapVehicleToShip(
     getEnglishText(rawVehicle.localization, 'shortmark') ??
     codeName;
 
+  const shortDisplayName = getEnglishText(rawVehicle.localization, 'shortmark');
+
+  const description = getEnglishText(rawVehicle.localization, 'description');
+
   return {
     id,
     codeName,
     displayName,
+
+    shortDisplayName:
+      shortDisplayName && shortDisplayName !== displayName
+        ? shortDisplayName
+        : null,
+
+    description,
+
     tier: isNumber(rawVehicle.level) ? rawVehicle.level : null,
     nationCode: isString(rawVehicle.nation) ? rawVehicle.nation : null,
     typeKey: getVehicleType(rawVehicle.tags),
+
     imageUrls: {
       medium: getImageUrl(rawVehicle.icons, mediaBaseUrl, 'medium'),
       large: getImageUrl(rawVehicle.icons, mediaBaseUrl, 'large'),

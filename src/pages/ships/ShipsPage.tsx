@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ShipFilters } from '../../features/ship-filters/ui/ShipFilters';
@@ -14,6 +14,7 @@ import {
 } from '../../features/ship-filters/model/types';
 import { fetchFleetData } from '../../shared/api/fleet';
 import { ShipList } from '../../entities/ship/ui/ShipList';
+import { ShipDetailsDialog } from '../../entities/ship/ui/ShipDetailsDialog';
 import { markShipsRendered } from '../../shared/monitoring/sentry';
 
 const EMPTY_FILTER_OPTIONS: ShipFilterOptions = {
@@ -27,6 +28,26 @@ const THIRTY_MINUTES = 30 * 60 * 1000;
 
 export function ShipsPage() {
   const [filters, setFilters] = useState<ShipFiltersState>(initialShipFilters);
+  const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const pageScrollYRef = useRef(0);
+
+  const handleOpenShip = (shipId: string) => {
+    pageScrollYRef.current = window.scrollY;
+    setSelectedShipId(shipId);
+  };
+
+  const handleCloseShip = () => {
+    setSelectedShipId(null);
+
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: pageScrollYRef.current,
+        left: 0,
+        behavior: 'auto',
+      });
+    });
+  };
 
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ['fleet'],
@@ -47,6 +68,31 @@ export function ShipsPage() {
     () => (data ? filterShips(data.ships, filters) : []),
     [data, filters],
   );
+
+  const activeFilterCount = [
+    filters.search.trim() !== '',
+    filters.nation !== null,
+    filters.type !== null,
+    filters.tier !== null,
+  ].filter(Boolean).length;
+
+  const selectedShip = useMemo(
+    () =>
+      data && selectedShipId
+        ? (data.ships.find((ship) => ship.id === selectedShipId) ?? null)
+        : null,
+    [data, selectedShipId],
+  );
+
+  const selectedNation =
+    selectedShip?.nationCode && data
+      ? (data.nationsByCode[selectedShip.nationCode] ?? null)
+      : null;
+
+  const selectedShipType =
+    selectedShip?.typeKey && data
+      ? (data.typesByKey[selectedShip.typeKey] ?? null)
+      : null;
 
   useEffect(() => {
     if (data) markShipsRendered();
@@ -110,18 +156,50 @@ export function ShipsPage() {
         </section>
       ) : (
         <>
-          <ShipFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-            onReset={() => setFilters(initialShipFilters)}
-          />
+          <div className="ships-controls">
+            <div className="ships-results-summary">
+              <p className="ships-results-count" role="status">
+                <strong>{filteredShips.length}</strong>{' '}
+                {filteredShips.length === 1 ? 'ship' : 'ships'} found
+              </p>
 
-          <div className="ships-results-summary">
-            <p className="ships-results-count" role="status">
-              <strong>{filteredShips.length}</strong>{' '}
-              {filteredShips.length === 1 ? 'ship' : 'ships'} found
-            </p>
+              <button
+                className="ships-mobile-filters-toggle"
+                type="button"
+                aria-expanded={isMobileFiltersOpen}
+                aria-controls="ship-filters-panel"
+                onClick={() => setIsMobileFiltersOpen((isOpen) => !isOpen)}
+              >
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="ships-mobile-filters-count">
+                    {activeFilterCount}
+                  </span>
+                )}
+                <span
+                  className={`ships-mobile-filters-chevron ${
+                    isMobileFiltersOpen ? 'is-open' : ''
+                  }`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
+              </button>
+            </div>
+
+            <div
+              id="ship-filters-panel"
+              className={`ships-filters-panel ${
+                isMobileFiltersOpen ? 'is-open' : ''
+              }`}
+            >
+              <ShipFilters
+                filters={filters}
+                options={filterOptions}
+                onChange={setFilters}
+                onReset={() => setFilters(initialShipFilters)}
+              />
+            </div>
           </div>
 
           {filteredShips.length === 0 ? (
@@ -146,10 +224,21 @@ export function ShipsPage() {
               </button>
             </section>
           ) : (
-            <ShipList ships={filteredShips} />
+            <ShipList
+              ships={filteredShips}
+              nationsByCode={data.nationsByCode}
+              typesByKey={data.typesByKey}
+              onOpenShip={handleOpenShip}
+            />
           )}
         </>
       )}
+      <ShipDetailsDialog
+        ship={selectedShip}
+        nation={selectedNation}
+        shipType={selectedShipType}
+        onClose={handleCloseShip}
+      />
     </main>
   );
 }

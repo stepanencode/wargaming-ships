@@ -6,6 +6,30 @@
   overflow-x: hidden;
 
   outline: none;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.ship-list-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ship-list-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ship-list-viewport::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+
+  background: var(--color-border-strong);
+  background-clip: padding-box;
+}
+
+.ship-list-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+  background-clip: padding-box;
 }
 
 .ship-list-viewport:focus-visible {
@@ -23,8 +47,8 @@
 
 @media (max-width: 640px) {
   .ship-list-viewport {
-    height: 60dvh;
-    min-height: 320px;
+    height: 72dvh;
+    min-height: 420px;
   }
 }
 

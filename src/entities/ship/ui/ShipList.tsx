@@ -1,15 +1,22 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-
-import type { Ship } from '../model/types';
+import type { Nation, Ship, ShipType, ShipTypeKey } from '../model/types';
 import { ShipCard } from './ShipCard';
 import './ShipList.css';
 
 type ShipListProps = {
   ships: Ship[];
+  nationsByCode: Record<string, Nation>;
+  typesByKey: Partial<Record<ShipTypeKey, ShipType>>;
+  onOpenShip: (shipId: string) => void;
 };
 
-export function ShipList({ ships }: ShipListProps) {
+export function ShipList({
+  ships,
+  nationsByCode,
+  typesByKey,
+  onOpenShip,
+}: ShipListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // TanStack Virtual is intentionally used for list virtualization.
@@ -40,6 +47,13 @@ export function ShipList({ ships }: ShipListProps) {
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const ship = ships[virtualRow.index];
+          const nation = ship.nationCode
+            ? (nationsByCode[ship.nationCode] ?? null)
+            : null;
+
+          const shipType = ship.typeKey
+            ? (typesByKey[ship.typeKey] ?? null)
+            : null;
 
           return (
             <li
@@ -54,7 +68,12 @@ export function ShipList({ ships }: ShipListProps) {
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <ShipCard ship={ship} />
+              <ShipCard
+                ship={ship}
+                nation={nation}
+                shipType={shipType}
+                onOpen={onOpenShip}
+              />
             </li>
           );
         })}

@@ -9,6 +9,8 @@ export type Ship = {
   id: string;
   codeName: string;
   displayName: string;
+  shortDisplayName: string | null;
+  description: string | null;
   tier: number | null;
   nationCode: string | null;
   typeKey: ShipTypeKey | null;

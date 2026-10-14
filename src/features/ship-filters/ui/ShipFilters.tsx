@@ -1,5 +1,6 @@
 import type { ShipFiltersState } from '../model/types';
 import type { ShipFilterOptions } from '../model/getFilterOptions';
+import { formatTier } from '../../../entities/ship/model/formatTier';
 import { SearchInput } from './SearchInput';
 import './ShipFilters.css';
 
@@ -105,7 +106,7 @@ export function ShipFilters({
 
           {options.tiers.map((tier) => (
             <option key={tier} value={tier}>
-              Tier {tier}
+              Tier {formatTier(tier)}
             </option>
           ))}
         </select>
