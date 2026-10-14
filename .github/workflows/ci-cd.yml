@@ -47,7 +47,23 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run worker:check
-      - run: npm run test:run
+      - id: unit-tests
+        run: npm run test:run -- --reporter=default --reporter=junit --outputFile.junit=reports/unit.xml
+
+      # Shown in the run summary even when tests fail; skipped when an earlier step failed.
+      - uses: mikepenz/action-junit-report@v6
+        if: ${{ !cancelled() && steps.unit-tests.outcome != 'skipped' }}
+        with:
+          report_paths: reports/unit.xml
+          check_name: Unit and integration tests
+          annotate_only: true
+          detailed_summary: true
+          include_passed: true
+          include_time_in_summary: true
+          group_suite: true
+          check_title_template: '{{TEST_NAME}}'
+          failed_summary_logs: true
+
       - run: npm run build
         env:
           VITE_SENTRY_RELEASE: ${{ steps.commit.outputs.sha }}
@@ -79,10 +95,26 @@ jobs:
 
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
 
+      - id: e2e-tests
+        run: npm run test:e2e
+
+      - uses: mikepenz/action-junit-report@v6
+        if: ${{ !cancelled() && steps.e2e-tests.outcome != 'skipped' }}
+        with:
+          report_paths: reports/e2e.xml
+          check_name: End-to-end tests
+          annotate_only: true
+          detailed_summary: true
+          include_passed: true
+          include_time_in_summary: true
+          group_suite: true
+          check_title_template: '{{TEST_NAME}}'
+          failed_summary_logs: true
+
+      # Full Playwright report with steps, screenshots and traces; download and open index.html.
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: ${{ !cancelled() && steps.e2e-tests.outcome != 'skipped' }}
         with:
           name: playwright-report
           path: playwright-report
