@@ -47,6 +47,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run worker:check
+      - run: npm run test:run
       - run: npm run build
         env:
           VITE_SENTRY_RELEASE: ${{ steps.commit.outputs.sha }}
@@ -59,10 +60,38 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
+  # Runs after build on the same commit, so the deployed commit is exactly the one tested.
+  # The app runs on the Vite dev server with the API mocked in the browser,
+  # so the real API is not called and Sentry stays off (its DSN is only in production builds).
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
   # Executes no code from the commit: dependencies are installed without scripts,
   # the worker is only bundled, and the site comes prebuilt from the build job.
   deploy:
-    needs: build
+    needs: [build, e2e]
     if: github.event_name == 'workflow_dispatch' && inputs.deploy || github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
