@@ -17,11 +17,11 @@ const SHORT_CACHE_CONTROL = 'public, max-age=300';
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const NO_STORE = 'no-store';
 // /vehicles/ is ~20 MB, mostly 19 translations; by default only what the app reads is kept
-// (medium and large icons for the 1x/2x srcSet).
+// (medium and large icons for the 1x/2x srcSet, names and descriptions in the requested language).
 const VEHICLES_PATH = /^\/api\/encyclopedia\/([a-z_-]+)\/vehicles\/$/i;
 // Fixed list of query options; anything else is rejected so random params cannot bust the cache.
 // `include` adds fields to the slim payload; `raw` returns the upstream body untouched, without parsing.
-const INCLUDE_VALUES = ['description', 'icons', 'translations'] as const;
+const INCLUDE_VALUES = ['icons', 'translations'] as const;
 
 type Include = (typeof INCLUDE_VALUES)[number];
 
@@ -154,8 +154,7 @@ function slimVehicle(vehicle: unknown, include: Set<Include>, language: string) 
     slim.icons = include.has('icons') ? vehicle.icons : pick(vehicle.icons, ['medium', 'large']);
   }
   if ('localization' in vehicle) {
-    const groups = include.has('description') ? ['mark', 'shortmark', 'description'] : ['mark', 'shortmark'];
-    const localization = pick(vehicle.localization, groups);
+    const localization = pick(vehicle.localization, ['mark', 'shortmark', 'description']);
     // A group is narrowed only when it has the requested language; otherwise it is kept whole
     // rather than emptied, so a missing translation never loses text.
     slim.localization =
