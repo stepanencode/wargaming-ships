@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:desktop": "playwright test --project=desktop-chromium",
+    "test:e2e:mobile": "playwright test --project=mobile-chromium",
     "preview": "vite preview",
     "worker:check": "tsc -p worker",
     "worker:deploy": "wrangler deploy --config worker/wrangler.jsonc"
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261011.1",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
